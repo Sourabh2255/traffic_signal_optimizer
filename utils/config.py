@@ -134,9 +134,8 @@ SIREN_V2_EXPECTED_FEATURES = 46
 SIREN_V2_CLASSES = ["ambulance_siren", "fire_truck_siren", "negative_sound"]
 SIREN_V2_CONFIDENCE_THRESHOLD = 0.50
 
-# Active siren detector version: 'v1' or 'v2'
-# Defaults to 'v1' to maintain existing detector behavior as fallback until tests pass
-SIREN_ACTIVE_VERSION = "v1"
+# Active siren detector version: 'v2' (Trained SVM pipeline on 46 MFCC & spectral features)
+SIREN_ACTIVE_VERSION = "v2"
 
 
 def get_siren_model_v2_path() -> str:

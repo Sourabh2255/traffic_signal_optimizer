@@ -235,8 +235,7 @@
                             <div class="siren-selector-box">
                                 <label for="siren-version-select" class="control-label">Siren Model Version:</label>
                                 <select id="siren-version-select" name="siren_version" class="select-input">
-                                    <option value="v1" {% if siren_active_version == 'v1' %}selected{% endif %}>Baseline V1 (Random Forest — 26 Features)</option>
-                                    <option value="v2" {% if siren_active_version == 'v2' %}selected{% endif %}>Newly Integrated V2 (SVM Pipeline — 46 MFCC & Spectral Features)</option>
+                                    <option value="v2" selected>Trained Siren Model (V2 — SVM, 46 MFCC & Spectral Features)</option>
                                 </select>
                                 <p class="control-hint">Direction-Independent: When a siren is confirmed, the system inspects all 4 directional feeds to locate emergency vehicles.</p>
                             </div>

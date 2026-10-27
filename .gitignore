@@ -12,6 +12,7 @@ ENV/
 # Large Archives & Training Data Splits (>100MB / thousands of images)
 ambulance_yolo.zip
 data/emergency_yolo/
+data/emergency_yolo_subset/
 data/train/
 data/valid/
 data/test/

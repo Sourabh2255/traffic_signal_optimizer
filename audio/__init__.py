@@ -12,11 +12,11 @@ from utils.config import SIREN_ACTIVE_VERSION
 def get_siren_detector(version: Optional[str] = None):
     """
     Factory to retrieve the appropriate siren detector based on version.
-    Defaults to SIREN_ACTIVE_VERSION ('v1') to preserve production behavior.
+    Defaults to SIREN_ACTIVE_VERSION ('v2') to use the trained V2 SVM model.
     Falls back gracefully if the requested version is unavailable.
 
     Args:
-        version: 'v1' or 'v2'. If None, uses SIREN_ACTIVE_VERSION.
+        version: 'v2' (default) or 'v1'. If None, uses SIREN_ACTIVE_VERSION.
     """
     selected_version = (version or SIREN_ACTIVE_VERSION).lower()
     if selected_version == "v2":

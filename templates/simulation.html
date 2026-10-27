@@ -626,11 +626,23 @@
     </div>
 
     <!-- Inject data into window scope for simulation controller & charts -->
+    <script id="simulation-data" type="application/json">
+    {
+        "cycle_plan": {{ cycle_plan | tojson }},
+        "emergency_plan": {{ emergency_plan | tojson }},
+        "impact_assessment": {{ impact_assessment | tojson }},
+        "is_demo": {{ is_demo | tojson }}
+    }
+    </script>
     <script>
-        window.CYCLE_PLAN = {{ cycle_plan | tojson if cycle_plan else 'null' }};
-        window.EMERGENCY_PLAN = {{ emergency_plan | tojson if emergency_plan else 'null' }};
-        window.IMPACT_ASSESSMENT = {{ impact_assessment | tojson if impact_assessment else 'null' }};
-        window.IS_DEMO = {{ 'true' if is_demo else 'false' }};
+        (function () {
+            const dataEl = document.getElementById("simulation-data");
+            const data = dataEl && dataEl.textContent ? JSON.parse(dataEl.textContent) : {};
+            window.CYCLE_PLAN = data.cycle_plan || null;
+            window.EMERGENCY_PLAN = data.emergency_plan || null;
+            window.IMPACT_ASSESSMENT = data.impact_assessment || null;
+            window.IS_DEMO = Boolean(data.is_demo);
+        })();
     </script>
     <script src="{{ url_for('static', filename='js/simulation.js') }}"></script>
 </body>

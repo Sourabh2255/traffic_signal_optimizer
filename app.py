@@ -136,38 +136,19 @@ def execute_analysis(files, form):
     from ml.predictor import GreenTimePredictor
     predictor = GreenTimePredictor()
 
-    siren_version_requested = form.get("siren_version", form.get("siren_model_version", SIREN_ACTIVE_VERSION)).lower()
+    # Always load and use the trained V2 siren model (SVM Pipeline — 46 MFCC & Spectral Features)
     siren_detector = None
-    siren_version_used = "v1"
+    siren_version_used = "v2"
 
-    if siren_version_requested == "v2" and _siren_model_v2_available():
+    if _siren_model_v2_available():
         from audio.siren_detector_v2 import SirenDetectorV2
         try:
             siren_detector = SirenDetectorV2()
             siren_version_used = "v2"
         except Exception as e:
-            app.logger.warning(f"Could not initialize SirenDetectorV2, falling back to V1: {e}")
-            if _siren_model_available():
-                from audio.siren_detector import SirenDetector
-                try:
-                    siren_detector = SirenDetector()
-                    siren_version_used = "v1"
-                except Exception as ex:
-                    app.logger.warning(f"Could not initialize fallback SirenDetector: {ex}")
-    elif _siren_model_available():
-        from audio.siren_detector import SirenDetector
-        try:
-            siren_detector = SirenDetector()
-            siren_version_used = "v1"
-        except Exception as e:
-            app.logger.warning(f"Could not initialize SirenDetector: {e}")
-            if _siren_model_v2_available():
-                from audio.siren_detector_v2 import SirenDetectorV2
-                try:
-                    siren_detector = SirenDetectorV2()
-                    siren_version_used = "v2"
-                except Exception as ex:
-                    app.logger.warning(f"Could not initialize fallback SirenDetectorV2: {ex}")
+            app.logger.error(f"Could not initialize trained SirenDetectorV2: {e}")
+    else:
+        app.logger.warning("Trained Siren Model V2 is unavailable at expected path.")
 
     global vehicle_detector, emergency_detector
     if vehicle_detector is None:
@@ -601,7 +582,7 @@ def api_analyze():
     Accepts multipart form with:
     - north, east, south, west image files
     - optional siren_audio / audio WAV file
-    - optional siren_version (v1, v2)
+    - siren_version (defaults to active trained v2)
     Returns structured JSON with all metrics, annotations, and simulation plans.
     """
     result_data, err = execute_analysis(request.files, request.form)
@@ -721,7 +702,7 @@ def load_and_execute_demo(scenario="normal"):
         "emergency_east": "Auto-Detect",
         "emergency_south": "Auto-Detect",
         "emergency_west": "Auto-Detect",
-        "siren_version": "v1",
+        "siren_version": "v2",
     }
     result_data, err = execute_analysis(file_storages, form_dict)
     if result_data:

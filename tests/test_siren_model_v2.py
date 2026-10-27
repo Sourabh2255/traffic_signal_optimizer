@@ -356,30 +356,30 @@ class TestSirenModelV2(unittest.TestCase):
     # =========================================================================
     # Requirement 9: Modular fallback and API model info endpoint
     # =========================================================================
-    def test_09_api_siren_model_info_and_v1_fallback(self):
-        """Verify /api/siren_model_info returns info for both models and fallback works."""
+    def test_09_api_siren_model_info_and_v2_active_enforcement(self):
+        """Verify /api/siren_model_info reports V2 as active and pipeline executes V2."""
         res = self.client.get("/api/siren_model_info")
         self.assertEqual(res.status_code, 200)
         data = res.get_json()
         self.assertTrue(data["success"])
-        self.assertTrue(data["v1"]["available"])
+        self.assertEqual(data["active_version"], "v2")
         self.assertTrue(data["v2"]["available"])
         self.assertEqual(data["v2"]["expected_features"], 46)
         self.assertIn("ambulance_siren", data["v2"]["classes"])
 
-        # Test request using explicit v1 fallback
-        data_v1 = {
+        # Test analysis request: confirms trained V2 model is used
+        data_req = {
             "north": (get_dummy_normal_image(), "north.jpg"),
             "east": (get_dummy_normal_image(), "east.jpg"),
             "south": (get_dummy_normal_image(), "south.jpg"),
             "west": (get_dummy_normal_image(), "west.jpg"),
             "siren_audio": (get_real_siren_audio_bytes(), "siren.wav"),
-            "siren_version": "v1",
+            "siren_version": "v2",
         }
-        res_v1 = self.client.post("/api/analyze", data=data_v1, content_type="multipart/form-data")
-        self.assertEqual(res_v1.status_code, 200)
-        json_v1 = res_v1.get_json()["data"]
-        self.assertEqual(json_v1["siren_analysis"]["model_version"], "v1")
+        res_v2 = self.client.post("/api/analyze", data=data_req, content_type="multipart/form-data")
+        self.assertEqual(res_v2.status_code, 200)
+        json_v2 = res_v2.get_json()["data"]
+        self.assertEqual(json_v2["siren_analysis"]["model_version"], "v2")
 
 
 if __name__ == "__main__":

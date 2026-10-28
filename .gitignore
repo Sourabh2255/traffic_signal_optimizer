@@ -33,3 +33,4 @@ debug_annotated_ambulance.jpg
 .vscode/
 .idea/
 *.log
+backups/

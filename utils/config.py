@@ -153,17 +153,28 @@ def get_siren_model_v2_path() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Custom Emergency Vehicle YOLO Detector (Ambulance & Fire Truck)
+# Custom Emergency Vehicle YOLO Detector (Ambulance, Fire_Truck, Police, Vehicle)
 # ---------------------------------------------------------------------------
-EMERGENCY_MODEL_PATH = os.path.join(MODELS_FOLDER, "best_emergency_vehicle.pt")
-EMERGENCY_CONFIDENCE_THRESHOLD = 0.15
-EMERGENCY_IMGSZ = 1280
+EMERGENCY_MODEL_FILENAME = "emergency.pt"
+EMERGENCY_MODEL_CURRENT_PATH = os.path.join(MODELS_FOLDER, EMERGENCY_MODEL_FILENAME)
+EMERGENCY_MODEL_V1_PATH = os.path.join(MODELS_FOLDER, "best_emergency_vehicle.pt")
+EMERGENCY_MODEL_V2_PATH = os.path.join(MODELS_FOLDER, "best_emergency_vehicle_v2.pt")
+
+# Active model: strictly use models/emergency.pt
+EMERGENCY_MODEL_PATH = EMERGENCY_MODEL_CURRENT_PATH if os.path.exists(EMERGENCY_MODEL_CURRENT_PATH) else EMERGENCY_MODEL_V2_PATH
+EMERGENCY_CONFIDENCE_THRESHOLD = 0.25
+EMERGENCY_IMGSZ = 416
 EMERGENCY_IOU_THRESHOLD = 0.40
-EMERGENCY_CLASSES = {0: "Ambulance", 1: "Fire Truck"}
+EMERGENCY_CLASSES = {0: "Ambulance", 1: "Fire_Truck", 2: "Police", 3: "Vehicle"}
+
+# Policy setting: Police detections are monitored and displayed explicitly.
+# By default, police vehicles do not trigger exclusive emergency signal preemption
+# unless explicitly permitted by traffic control policy.
+ALLOW_POLICE_EMERGENCY_PRIORITY = False
 
 # Emergency vehicle options for UI forms:
 # Defaults to Auto-Detect using the fine-tuned YOLO model, with manual simulation options
-EMERGENCY_VEHICLE_TYPES = ["Auto-Detect", "None", "Ambulance", "Fire Truck"]
+EMERGENCY_VEHICLE_TYPES = ["Auto-Detect", "None", "Ambulance", "Fire Truck", "Police"]
 
 # ---------------------------------------------------------------------------
 # Emergency safety transition (Phase 12) — simplified software model

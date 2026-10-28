@@ -63,6 +63,7 @@
     let emAuditDirection;
     let emAuditAmbulance;
     let emAuditFiretruck;
+    let emAuditPolice;
     let emAuditConfidence;
     let emAuditSiren;
     let emAuditSirenConf;
@@ -109,6 +110,7 @@
         emAuditDirection = document.getElementById("em-audit-direction");
         emAuditAmbulance = document.getElementById("em-audit-ambulance");
         emAuditFiretruck = document.getElementById("em-audit-firetruck");
+        emAuditPolice = document.getElementById("em-audit-police");
         emAuditConfidence = document.getElementById("em-audit-confidence");
         emAuditSiren = document.getElementById("em-audit-siren");
         emAuditSirenConf = document.getElementById("em-audit-siren-conf");
@@ -177,6 +179,10 @@
             }
         });
 
+        // Prevent default drag & drop behavior across entire window so dropped files don't navigate away
+        window.addEventListener("dragover", (e) => e.preventDefault(), false);
+        window.addEventListener("drop", (e) => e.preventDefault(), false);
+
         updateValidationStatus();
     });
 
@@ -189,8 +195,17 @@
 
         if (!dropzone || !input) return;
 
-        // Click on dropzone triggers hidden file input
-        dropzone.addEventListener("click", () => input.click());
+        // Stop propagation so clicking the input doesn't bubble
+        input.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+
+        // Click on dropzone triggers file picker if dropzone is not a semantic label
+        dropzone.addEventListener("click", (e) => {
+            if (dropzone.tagName !== "LABEL" && e.target !== input) {
+                input.click();
+            }
+        });
 
         // File input changed
         input.addEventListener("change", (e) => {
@@ -264,8 +279,11 @@
 
     // Expose triggerFileInput & removeFile to window
     window.triggerFileInput = function (road) {
-        const input = document.getElementById(`file-${road}`);
-        if (input) input.click();
+        const input = (road === "siren") ? document.getElementById("file-siren") : document.getElementById(`file-${road}`);
+        if (input) {
+            input.value = "";
+            input.click();
+        }
     };
 
     window.removeFile = function (road) {
@@ -298,7 +316,15 @@
 
         if (!dropzone || !input) return;
 
-        dropzone.addEventListener("click", () => input.click());
+        input.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+
+        dropzone.addEventListener("click", (e) => {
+            if (dropzone.tagName !== "LABEL" && e.target !== input) {
+                input.click();
+            }
+        });
 
         input.addEventListener("change", (e) => {
             if (e.target.files && e.target.files[0]) {
@@ -591,14 +617,52 @@
                 emAuditDirection.innerHTML = `<span class="badge-dir">${ea.selected_direction || ea.emergency_road || "All Approaches (Auto-Scan)"}</span>`;
             }
 
+            const emAuditVisualStatus = document.getElementById("em-audit-visual-status");
+            if (emAuditVisualStatus) {
+                const isVisEm = Boolean(ea.visual_emergency_detected || ea.ambulance_detected || ea.fire_truck_detected || (ea.police_detected && ea.allow_police_priority));
+                if (isVisEm) {
+                    emAuditVisualStatus.innerHTML = `<span class="val-tag tag-yes">Yes (Emergency Vehicle)</span>`;
+                } else if (ea.police_detected) {
+                    emAuditVisualStatus.innerHTML = `<span class="val-tag tag-police">Police (Standard Priority)</span>`;
+                } else if ((ea.vehicle_count || 0) > 0) {
+                    emAuditVisualStatus.innerHTML = `<span class="val-tag tag-no">No (Ordinary Vehicle Only)</span>`;
+                } else {
+                    emAuditVisualStatus.innerHTML = `<span class="val-tag tag-no">No</span>`;
+                }
+            }
+
+            const emAuditVehicleType = document.getElementById("em-audit-vehicle-type");
+            if (emAuditVehicleType) {
+                if (ea.emergency_vehicle_type && ea.emergency_vehicle_type !== "None") {
+                    emAuditVehicleType.innerHTML = `<strong>${ea.emergency_vehicle_type}</strong>`;
+                } else if (ea.police_detected) {
+                    emAuditVehicleType.innerHTML = `<span>Police (${ea.police_count || 1}) — Preemption Restricted</span>`;
+                } else if ((ea.vehicle_count || 0) > 0) {
+                    emAuditVehicleType.innerHTML = `<span>Vehicle (Non-Emergency)</span>`;
+                } else {
+                    emAuditVehicleType.textContent = "None";
+                }
+            }
+
             if (emAuditAmbulance) {
-                const isAmb = Boolean(ea.ambulance_detected);
-                emAuditAmbulance.innerHTML = `<span class="val-tag ${isAmb ? 'tag-yes' : 'tag-no'}">${isAmb ? 'Yes' : 'No'}</span>`;
+                const ambCount = ea.ambulance_count !== undefined ? ea.ambulance_count : (ea.ambulance_detected ? 1 : 0);
+                emAuditAmbulance.innerHTML = `<span class="val-tag ${ambCount > 0 ? 'tag-yes' : 'tag-no'}">${ambCount}${ambCount > 0 ? ' Detected' : ''}</span>`;
             }
 
             if (emAuditFiretruck) {
-                const isFt = Boolean(ea.fire_truck_detected);
-                emAuditFiretruck.innerHTML = `<span class="val-tag ${isFt ? 'tag-yes' : 'tag-no'}">${isFt ? 'Yes' : 'No'}</span>`;
+                const ftCount = ea.fire_truck_count !== undefined ? ea.fire_truck_count : (ea.fire_truck_detected ? 1 : 0);
+                emAuditFiretruck.innerHTML = `<span class="val-tag ${ftCount > 0 ? 'tag-yes' : 'tag-no'}">${ftCount}${ftCount > 0 ? ' Detected' : ''}</span>`;
+            }
+
+            if (emAuditPolice) {
+                const polCount = ea.police_count !== undefined ? ea.police_count : (ea.police_detected ? 1 : 0);
+                emAuditPolice.innerHTML = `<span class="val-tag ${polCount > 0 ? 'tag-police' : 'tag-no'}">${polCount}${polCount > 0 ? ' Detected' : ''}</span>`;
+            }
+
+            const emAuditVehicleCount = document.getElementById("em-audit-vehicle-count");
+            if (emAuditVehicleCount) {
+                const vCount = ea.vehicle_count || 0;
+                emAuditVehicleCount.innerHTML = `<span class="val-tag ${vCount > 0 ? 'tag-yes' : 'tag-no'}">${vCount}</span>`;
             }
 
             if (emAuditConfidence) {
@@ -679,6 +743,11 @@
             // Emergency vehicle detection label
             const hasEmergencyVehicle = Boolean(r.emergency_vehicle_detected || r.emergency_detected);
             const vType = (r.emergency_vehicle_type && r.emergency_vehicle_type !== "None") ? r.emergency_vehicle_type : null;
+            const ordCount = r.ordinary_yolo_count || 0;
+            const ambCount = r.ambulance_count || 0;
+            const ftCount = r.fire_truck_count || 0;
+            const polCount = r.police_count || 0;
+
             let emVehicleDisplay = "None detected";
             let emValClass = "";
 
@@ -695,6 +764,12 @@
                     emVehicleDisplay = `${vType} candidate — confirmation pending${confPercent}`;
                     emValClass = "em-pending";
                 }
+            } else if (polCount > 0) {
+                emVehicleDisplay = `Police (${polCount}) — Monitored (Standard Priority)`;
+                emValClass = "em-police";
+            } else if (ordCount > 0) {
+                emVehicleDisplay = `Vehicle (${ordCount}) — Ordinary Traffic`;
+                emValClass = "";
             } else {
                 emVehicleDisplay = "None detected";
                 emValClass = "";
@@ -755,6 +830,12 @@
                 <div class="result-emergency-info">
                     <span class="info-label">Emergency Vehicle:</span>
                     <span class="info-val ${emValClass}">${emVehicleDisplay}</span>
+                </div>
+                <div class="result-breakdown-chips" style="display: flex; gap: 6px; margin: 4px 0 8px 0; font-size: 0.78rem; flex-wrap: wrap;">
+                    <span class="v-chip" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">🚑 Ambulance: ${ambCount}</span>
+                    <span class="v-chip" style="background: rgba(249, 115, 22, 0.1); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2);">🚒 Fire Truck: ${ftCount}</span>
+                    <span class="v-chip" style="background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.2);">🚓 Police: ${polCount}</span>
+                    <span class="v-chip" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2);">🚙 Vehicle: ${ordCount}</span>
                 </div>
 
                 <div class="result-reason-msg">

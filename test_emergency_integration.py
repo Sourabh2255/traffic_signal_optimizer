@@ -91,7 +91,9 @@ class TestEmergencyModelIntegration(unittest.TestCase):
         self.assertIn(0, info["classes"])
         self.assertIn(1, info["classes"])
         self.assertEqual(info["classes"][0].lower(), "ambulance")
-        self.assertEqual(info["classes"][1].lower(), "fire_truck")
+        self.assertIn(info["classes"][1].lower(), ("fire-truck", "fire_truck"))
+        if 2 in info["classes"]:
+            self.assertEqual(info["classes"][2].lower(), "vehicle")
 
     # --------------------------------------------------------------------------
     # 2. Detecting Ambulances and Fire Trucks
@@ -118,10 +120,11 @@ class TestEmergencyModelIntegration(unittest.TestCase):
         """Verifies that an ordinary traffic image produces 0 emergency detections."""
         if self.neg_image:
             detections = self.detector.detect(self.neg_image, conf=0.25)
+            emergency_dets = [d for d in detections if d.get("is_emergency", False)]
             self.assertEqual(
-                len(detections),
+                len(emergency_dets),
                 0,
-                f"False positive detection found on confirmed negative image: {detections}",
+                f"False positive emergency detection found on confirmed negative image: {emergency_dets}",
             )
 
             summary = self.detector.detect_summary(self.neg_image, road="North")

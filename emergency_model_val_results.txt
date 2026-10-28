@@ -1,0 +1,20 @@
+======================================================================
+EMERGENCY VEHICLE YOLO DETECTION EVALUATION REPORT
+======================================================================
+Model:           best_emergency_vehicle.pt
+Dataset Split:   Validation (split='val')
+Image Size:      640
+Confidence:      0.10
+
+OVERALL METRICS:
+Precision:       0.3693 (36.93%)
+Recall:          0.4067 (40.67%)
+mAP@50:          0.3385 (33.85%)
+mAP@50-95:       0.1749 (17.49%)
+
+PER-CLASS METRICS:
+Class ID  Class Name      Precision     Recall        mAP@50        mAP@50-95     
+----------------------------------------------------------------------
+0         ambulance       0.5414        0.5913        0.5902        0.3232        
+1         fire_truck      0.1971        0.2222        0.0868        0.0265        
+======================================================================

@@ -30,7 +30,7 @@ from utils.config import (
     SAFE_FALLBACK_GREEN_TIME, YELLOW_LIGHT_SECONDS, get_max_green_time,
     SIREN_CONFIDENCE_THRESHOLD, EMERGENCY_GREEN_SECONDS,
     SIREN_MODEL_V2_PATH, SIREN_V2_CONFIDENCE_THRESHOLD, SIREN_ACTIVE_VERSION,
-    get_siren_model_v2_path,
+    get_siren_model_v2_path, ALLOW_POLICE_EMERGENCY_PRIORITY,
 )
 from utils.validators import is_allowed_image, save_uploaded_image
 from detection.vehicle_detector import VehicleDetector
@@ -256,13 +256,17 @@ def execute_analysis(files, form):
             detections = []
             counts = {"car": 0, "motorcycle": 0, "bus": 0, "truck": 0, "total": 0}
 
-        # 2. Computer Vision: Custom Emergency Vehicle (Ambulance / Fire Truck)
+        # 2. Computer Vision: Custom Emergency Vehicle (Ambulance, Fire Truck, Vehicle)
         em_summary = {
             "detected": False,
+            "visual_emergency_detected": False,
             "vehicle_type": "None",
             "confidence": None,
             "box": None,
             "detections": [],
+            "ambulance_count": 0,
+            "fire_truck_count": 0,
+            "vehicle_count": 0,
         }
         if emergency_detector is not None:
             try:
@@ -335,7 +339,12 @@ def execute_analysis(files, form):
             "box": em_summary.get("box"),
             "detections": em_summary.get("detections", []),
             "ambulance_detected": bool(em_summary.get("ambulance_detected", False) or (em_detected and emergency_vehicle_type == "Ambulance")),
-            "fire_truck_detected": bool(em_summary.get("fire_truck_detected", False) or (em_detected and emergency_vehicle_type == "Fire Truck")),
+            "fire_truck_detected": bool(em_summary.get("fire_truck_detected", False) or (em_detected and emergency_vehicle_type in ("Fire Truck", "Fire_Truck"))),
+            "police_detected": bool(em_summary.get("police_detected", False) or (em_detected and emergency_vehicle_type == "Police")),
+            "ambulance_count": em_summary.get("ambulance_count", 1 if (em_detected and emergency_vehicle_type == "Ambulance") else 0),
+            "fire_truck_count": em_summary.get("fire_truck_count", 1 if (em_detected and emergency_vehicle_type in ("Fire Truck", "Fire_Truck")) else 0),
+            "police_count": em_summary.get("police_count", 1 if (em_detected and emergency_vehicle_type == "Police") else 0),
+            "vehicle_count": em_summary.get("vehicle_count", 0),
             "counts": counts,
             "filename": filename,
             "processed_filename": processed_filename,
@@ -417,6 +426,11 @@ def execute_analysis(files, form):
             "emergency_candidate_pending": bool(em_detected and not road_status["emergency_priority_confirmed"]),
             "ambulance_detected": cand["ambulance_detected"],
             "fire_truck_detected": cand["fire_truck_detected"],
+            "police_detected": cand.get("police_detected", False),
+            "ambulance_count": cand.get("ambulance_count", 0),
+            "fire_truck_count": cand.get("fire_truck_count", 0),
+            "police_count": cand.get("police_count", 0),
+            "ordinary_yolo_count": cand.get("vehicle_count", 0),
             "emergency_vehicle_type": cand["vehicle_type"],
             "emergency_confidence": cand["confidence"],
             "emergency_box": cand["box"],
@@ -473,12 +487,24 @@ def execute_analysis(files, form):
         )
 
     # Build dedicated emergency analysis summary for dashboard and audit
+    total_amb_all = sum(r.get("ambulance_count", 0) for r in analysis_results.values())
+    total_ft_all = sum(r.get("fire_truck_count", 0) for r in analysis_results.values())
+    total_pol_all = sum(r.get("police_count", 0) for r in analysis_results.values())
+    total_veh_all = sum(r.get("ordinary_yolo_count", 0) for r in analysis_results.values())
+
     if emergency_road:
         prioritized_res = analysis_results.get(emergency_road, {})
         emergency_analysis = {
             "selected_direction": emergency_road,
             "ambulance_detected": prioritized_res.get("ambulance_detected", False),
             "fire_truck_detected": prioritized_res.get("fire_truck_detected", False),
+            "police_detected": prioritized_res.get("police_detected", False),
+            "visual_emergency_detected": True,
+            "ambulance_count": total_amb_all,
+            "fire_truck_count": total_ft_all,
+            "police_count": total_pol_all,
+            "vehicle_count": total_veh_all,
+            "allow_police_priority": ALLOW_POLICE_EMERGENCY_PRIORITY,
             "emergency_detected": True,
             "emergency_vehicle_type": vehicle_type or "Ambulance",
             "emergency_confidence": vehicle_confidence,
@@ -507,11 +533,19 @@ def execute_analysis(files, form):
             if priority_res["confirmed_directions"]
             else "All Approaches (Auto-Scan)"
         )
+        visual_emergency_present = bool(total_amb_all > 0 or total_ft_all > 0 or (total_pol_all > 0 and ALLOW_POLICE_EMERGENCY_PRIORITY))
 
         emergency_analysis = {
             "selected_direction": selected_dir,
             "ambulance_detected": any(r.get("ambulance_detected", False) for r in analysis_results.values()),
             "fire_truck_detected": any(r.get("fire_truck_detected", False) for r in analysis_results.values()),
+            "police_detected": any(r.get("police_detected", False) for r in analysis_results.values()),
+            "visual_emergency_detected": visual_emergency_present,
+            "ambulance_count": total_amb_all,
+            "fire_truck_count": total_ft_all,
+            "police_count": total_pol_all,
+            "vehicle_count": total_veh_all,
+            "allow_police_priority": ALLOW_POLICE_EMERGENCY_PRIORITY,
             "emergency_detected": bool(top_cand is not None),
             "emergency_vehicle_type": top_cand["vehicle_type"] if top_cand else "None",
             "emergency_confidence": top_cand["confidence"] if top_cand else None,

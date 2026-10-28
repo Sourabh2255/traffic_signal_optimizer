@@ -64,22 +64,48 @@ def draw_detections(
             FONT, 0.5, VEHICLE_TEXT_COLOR, 1, cv2.LINE_AA,
         )
 
-    # 2. Draw emergency vehicle detections (red, thicker, prominent label)
+    # 2. Draw emergency YOLO detections (Ambulance, Fire Truck, Vehicle)
     if emergency_detections:
         for em in emergency_detections:
             x1, y1, x2, y2 = [int(v) for v in em["box"]]
-            label = f"[EMERGENCY] {em['class_name']} {em['confidence']:.2f}"
+            is_em = em.get("is_emergency", False) or em["class_name"] in ("Ambulance", "Fire Truck")
 
-            # Thicker box for emergency vehicle
-            cv2.rectangle(image, (x1, y1), (x2, y2), EMERGENCY_BOX_COLOR, 3)
+            if is_em:
+                label = f"[EMERGENCY] {em['class_name']} {em['confidence']:.2f}"
+                # Thicker red box for emergency vehicle
+                cv2.rectangle(image, (x1, y1), (x2, y2), EMERGENCY_BOX_COLOR, 3)
 
-            (text_w, text_h), baseline = cv2.getTextSize(label, FONT, 0.55, 2)
-            label_top = max(y1 - text_h - 10, 0)
-            cv2.rectangle(image, (x1, label_top), (x1 + text_w + 8, y1), EMERGENCY_LABEL_BG, -1)
-            cv2.putText(
-                image, label, (x1 + 4, y1 - 5),
-                FONT, 0.55, EMERGENCY_TEXT_COLOR, 2, cv2.LINE_AA,
-            )
+                (text_w, text_h), baseline = cv2.getTextSize(label, FONT, 0.55, 2)
+                label_top = max(y1 - text_h - 10, 0)
+                cv2.rectangle(image, (x1, label_top), (x1 + text_w + 8, y1), EMERGENCY_LABEL_BG, -1)
+                cv2.putText(
+                    image, label, (x1 + 4, y1 - 5),
+                    FONT, 0.55, EMERGENCY_TEXT_COLOR, 2, cv2.LINE_AA,
+                )
+            elif em["class_name"] == "Police":
+                label = f"[POLICE] {em['class_name']} {em['confidence']:.2f}"
+                police_color = (235, 120, 30)  # BGR: Police Blue
+                cv2.rectangle(image, (x1, y1), (x2, y2), police_color, 2)
+
+                (text_w, text_h), baseline = cv2.getTextSize(label, FONT, 0.5, 1)
+                label_top = max(y1 - text_h - 8, 0)
+                cv2.rectangle(image, (x1, label_top), (x1 + text_w + 6, y1), police_color, -1)
+                cv2.putText(
+                    image, label, (x1 + 3, y1 - 4),
+                    FONT, 0.5, (255, 255, 255), 1, cv2.LINE_AA,
+                )
+            else:
+                # Ordinary vehicle detection from custom model (distinct non-emergency label)
+                label = f"{em['class_name']} {em['confidence']:.2f}"
+                cv2.rectangle(image, (x1, y1), (x2, y2), (255, 180, 0), 2)
+
+                (text_w, text_h), baseline = cv2.getTextSize(label, FONT, 0.5, 1)
+                label_top = max(y1 - text_h - 8, 0)
+                cv2.rectangle(image, (x1, label_top), (x1 + text_w + 6, y1), (40, 40, 40), -1)
+                cv2.putText(
+                    image, label, (x1 + 3, y1 - 4),
+                    FONT, 0.5, (255, 255, 255), 1, cv2.LINE_AA,
+                )
 
     output_path = os.path.join(UPLOAD_FOLDER, output_filename)
     cv2.imwrite(output_path, image)

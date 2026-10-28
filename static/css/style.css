@@ -1722,6 +1722,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: var(--transition-fast);
+    user-select: none;
 }
 
 .upload-dropzone:hover, .upload-dropzone.dragover {
@@ -1730,7 +1731,17 @@ body {
 }
 
 .file-input-hidden {
-    display: none;
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.dropzone-content,
+.dropzone-content * {
+    pointer-events: none;
 }
 
 .dropzone-icon {
@@ -2925,6 +2936,12 @@ body {
     background: rgba(100, 116, 139, 0.2);
     color: #94a3b8;
     border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.val-tag.tag-police {
+    background: rgba(14, 165, 233, 0.2);
+    color: #38bdf8;
+    border: 1px solid rgba(14, 165, 233, 0.4);
 }
 
 .val-tag.tag-confirmed {

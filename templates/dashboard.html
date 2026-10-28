@@ -29,7 +29,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
                 <div class="metric-box">
                     <span class="metric-label">Model Weights</span>
-                    <span class="metric-value" style="font-size: 1rem; word-break: break-all;">best_emergency_vehicle.pt</span>
+                    <span class="metric-value" style="font-size: 1rem; word-break: break-all;">{{ emergency_model_info.model_name or "best_emergency_vehicle_v2.pt" }}</span>
                 </div>
                 <div class="metric-box">
                     <span class="metric-label">Model Status</span>
@@ -40,7 +40,7 @@
                 <div class="metric-box">
                     <span class="metric-label">Target Classes</span>
                     <span class="metric-value" style="font-size: 1rem;">
-                        Class 0: Ambulance<br>Class 1: Fire Truck
+                        Class 0: Ambulance<br>Class 1: Fire Truck<br>Class 2: Vehicle
                     </span>
                 </div>
                 <div class="metric-box">

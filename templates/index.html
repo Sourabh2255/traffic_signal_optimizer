@@ -85,14 +85,14 @@
                             </div>
                             
                             <!-- Dropzone View -->
-                            <div class="upload-dropzone" id="dropzone-north">
-                                <input type="file" id="file-north" name="north" accept=".jpg,.jpeg,.png" class="file-input-hidden">
+                            <input type="file" id="file-north" name="north" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="file-input-hidden">
+                            <label for="file-north" class="upload-dropzone" id="dropzone-north">
                                 <div class="dropzone-content">
                                     <div class="dropzone-icon">📷</div>
                                     <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
                                     <p class="dropzone-hint">JPG, JPEG, PNG (Max 16MB)</p>
                                 </div>
-                            </div>
+                            </label>
 
                             <!-- Preview View (hidden until file selected) -->
                             <div class="file-preview-card" id="preview-north" style="display: none;">
@@ -121,14 +121,14 @@
                                 <span class="file-status-tag" id="status-tag-east">Required</span>
                             </div>
                             
-                            <div class="upload-dropzone" id="dropzone-east">
-                                <input type="file" id="file-east" name="east" accept=".jpg,.jpeg,.png" class="file-input-hidden">
+                            <input type="file" id="file-east" name="east" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="file-input-hidden">
+                            <label for="file-east" class="upload-dropzone" id="dropzone-east">
                                 <div class="dropzone-content">
                                     <div class="dropzone-icon">📷</div>
                                     <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
                                     <p class="dropzone-hint">JPG, JPEG, PNG (Max 16MB)</p>
                                 </div>
-                            </div>
+                            </label>
 
                             <div class="file-preview-card" id="preview-east" style="display: none;">
                                 <div class="preview-img-wrap">
@@ -156,14 +156,14 @@
                                 <span class="file-status-tag" id="status-tag-south">Required</span>
                             </div>
                             
-                            <div class="upload-dropzone" id="dropzone-south">
-                                <input type="file" id="file-south" name="south" accept=".jpg,.jpeg,.png" class="file-input-hidden">
+                            <input type="file" id="file-south" name="south" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="file-input-hidden">
+                            <label for="file-south" class="upload-dropzone" id="dropzone-south">
                                 <div class="dropzone-content">
                                     <div class="dropzone-icon">📷</div>
                                     <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
                                     <p class="dropzone-hint">JPG, JPEG, PNG (Max 16MB)</p>
                                 </div>
-                            </div>
+                            </label>
 
                             <div class="file-preview-card" id="preview-south" style="display: none;">
                                 <div class="preview-img-wrap">
@@ -191,14 +191,14 @@
                                 <span class="file-status-tag" id="status-tag-west">Required</span>
                             </div>
                             
-                            <div class="upload-dropzone" id="dropzone-west">
-                                <input type="file" id="file-west" name="west" accept=".jpg,.jpeg,.png" class="file-input-hidden">
+                            <input type="file" id="file-west" name="west" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="file-input-hidden">
+                            <label for="file-west" class="upload-dropzone" id="dropzone-west">
                                 <div class="dropzone-content">
                                     <div class="dropzone-icon">📷</div>
                                     <p class="dropzone-text"><strong>Click to upload</strong> or drag & drop</p>
                                     <p class="dropzone-hint">JPG, JPEG, PNG (Max 16MB)</p>
                                 </div>
-                            </div>
+                            </label>
 
                             <div class="file-preview-card" id="preview-west" style="display: none;">
                                 <div class="preview-img-wrap">
@@ -242,14 +242,14 @@
 
                             <!-- WAV File Upload -->
                             <div class="siren-upload-box">
-                                <div class="upload-dropzone audio-dropzone" id="dropzone-audio">
-                                    <input type="file" id="file-siren" name="siren_audio" accept=".wav" class="file-input-hidden">
+                                <input type="file" id="file-siren" name="siren_audio" accept=".wav,audio/wav,audio/x-wav,audio/*" class="file-input-hidden">
+                                <label for="file-siren" class="upload-dropzone audio-dropzone" id="dropzone-audio">
                                     <div class="dropzone-content">
                                         <div class="dropzone-icon">🎙️</div>
                                         <p class="dropzone-text"><strong>Upload Siren WAV</strong> or drag file here</p>
                                         <p class="dropzone-hint">WAV format only (Optional)</p>
                                     </div>
-                                </div>
+                                </label>
 
                                 <div class="file-preview-card audio-preview-card" id="preview-audio" style="display: none;">
                                     <div class="audio-player-wrap">
@@ -351,16 +351,32 @@
                                         <td id="em-audit-direction"><span class="badge-dir">South</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Ambulance Detected:</strong></td>
-                                        <td id="em-audit-ambulance"><span class="val-tag tag-no">No</span></td>
+                                        <td><strong>Visual Emergency Detected:</strong></td>
+                                        <td id="em-audit-visual-status"><span class="val-tag tag-no">No</span></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Fire Truck Detected:</strong></td>
-                                        <td id="em-audit-firetruck"><span class="val-tag tag-no">No</span></td>
+                                        <td><strong>Detected Vehicle Class:</strong></td>
+                                        <td id="em-audit-vehicle-type">--</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Emergency Detection Confidence:</strong></td>
+                                        <td><strong>Detection Confidence:</strong></td>
                                         <td id="em-audit-confidence">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ambulances Detected:</strong></td>
+                                        <td id="em-audit-ambulance"><span class="val-tag tag-no">0</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fire Trucks Detected:</strong></td>
+                                        <td id="em-audit-firetruck"><span class="val-tag tag-no">0</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Police Vehicles Detected:</strong></td>
+                                        <td id="em-audit-police"><span class="val-tag tag-no">0</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ordinary Vehicles Detected:</strong></td>
+                                        <td id="em-audit-vehicle-count"><span class="val-tag tag-no">0</span></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Siren Detected:</strong></td>

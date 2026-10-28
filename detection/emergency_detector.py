@@ -1,15 +1,15 @@
 """
 Custom YOLO-based Emergency Vehicle Detector.
 
-Dedicated detection module for identifying ambulances and fire trucks
-using the trained custom YOLO model (models/best_emergency_vehicle.pt).
+Dedicated detection module for identifying emergency vehicles (Ambulance, Fire Truck, Police)
+and ordinary Vehicles using the YOLO model (models/emergency.pt).
 
 Key responsibilities:
 - Loads the custom model once at application startup (singleton pattern).
-- Detects ambulances (Class 0) and fire trucks (Class 1) in images.
+- Detects Ambulance (Class 0), Fire_Truck (Class 1), Police (Class 2), and Vehicle (Class 3).
 - Returns bounding boxes, class names, confidence scores, and detection status.
 - Handles missing model files, unreadable images, and inference errors gracefully.
-- Configurable confidence threshold via utils.config.
+- Configurable confidence threshold (conf=0.25) and image size (imgsz=416) via utils.config.
 """
 
 import os
@@ -23,6 +23,7 @@ from utils.config import (
     EMERGENCY_IMGSZ,
     EMERGENCY_IOU_THRESHOLD,
     EMERGENCY_CLASSES,
+    ALLOW_POLICE_EMERGENCY_PRIORITY,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,13 @@ class EmergencyDetector:
     _load_attempted: bool = False
     _load_error: Optional[str] = None
 
+    _cached_path: Optional[str] = None
+
     def __init__(self, model_path: str = EMERGENCY_MODEL_PATH):
         self.model_path = model_path
-        if EmergencyDetector._model is None and not EmergencyDetector._load_attempted:
+        if EmergencyDetector._model is None or getattr(EmergencyDetector, "_cached_path", None) != model_path:
             self._load_model()
+            EmergencyDetector._cached_path = model_path
         self.model = EmergencyDetector._model
 
     @classmethod
@@ -62,6 +66,7 @@ class EmergencyDetector:
 
         return {
             "model_path": EMERGENCY_MODEL_PATH,
+            "model_name": os.path.basename(EMERGENCY_MODEL_PATH),
             "exists": available,
             "loaded": loaded,
             "classes": names,
@@ -78,6 +83,7 @@ class EmergencyDetector:
             error_msg = f"Custom emergency model file not found at: {self.model_path}"
             logger.warning(error_msg)
             EmergencyDetector._load_error = error_msg
+            EmergencyDetector._model = None
             return
 
         try:
@@ -103,18 +109,19 @@ class EmergencyDetector:
             List of detection dicts:
             [
                 {
-                    "class_name": "Ambulance",
-                    "class_id": 0,
-                    "confidence": 0.875,
+                    "class_name": "Ambulance" | "Fire Truck" | "Vehicle",
+                    "class_id": int,
+                    "confidence": float,
                     "box": [x1, y1, x2, y2],
-                    "is_emergency": True
+                    "is_emergency": bool (True ONLY for Ambulance & Fire Truck)
                 },
                 ...
             ]
         """
         if self.model is None:
-            if not EmergencyDetector._load_attempted:
+            if not EmergencyDetector._load_attempted or getattr(EmergencyDetector, "_cached_path", None) != self.model_path:
                 self._load_model()
+                EmergencyDetector._cached_path = self.model_path
                 self.model = EmergencyDetector._model
             if self.model is None:
                 logger.warning("EmergencyDetector invoked without an active model. Returning empty detections.")
@@ -148,14 +155,30 @@ class EmergencyDetector:
             class_id = int(box.cls[0].item())
             confidence = round(float(box.conf[0].item()), 3)
 
-            # Map class ID to human-readable capitalized name
-            raw_name = self.model.names.get(class_id, f"Class_{class_id}")
-            if class_id == 0 or "ambulance" in str(raw_name).lower():
+            # Map class ID and raw names to standardized display names
+            raw_name = str(self.model.names.get(class_id, f"Class_{class_id}")).strip()
+            raw_lower = raw_name.lower().replace("-", "_")
+
+            if class_id == 0 or "ambulance" in raw_lower:
                 display_name = "Ambulance"
-            elif class_id == 1 or "fire" in str(raw_name).lower():
+                is_emergency = True
+                vehicle_category = "emergency"
+            elif class_id == 1 or "fire" in raw_lower:
                 display_name = "Fire Truck"
+                is_emergency = True
+                vehicle_category = "emergency"
+            elif class_id == 2 or "police" in raw_lower:
+                display_name = "Police"
+                is_emergency = bool(ALLOW_POLICE_EMERGENCY_PRIORITY)
+                vehicle_category = "police"
+            elif class_id == 3 or "vehicle" in raw_lower:
+                display_name = "Vehicle"
+                is_emergency = False
+                vehicle_category = "ordinary"
             else:
-                display_name = str(raw_name).title()
+                display_name = raw_name.replace("-", " ").replace("_", " ").title()
+                is_emergency = False
+                vehicle_category = "ordinary"
 
             xyxy = [round(float(c), 1) for c in box.xyxy[0].tolist()]
 
@@ -164,7 +187,8 @@ class EmergencyDetector:
                 "class_id": class_id,
                 "confidence": confidence,
                 "box": xyxy,
-                "is_emergency": True,
+                "is_emergency": is_emergency,
+                "vehicle_category": vehicle_category,
             })
 
         # Sort detections by confidence descending
@@ -175,7 +199,7 @@ class EmergencyDetector:
         self, image_path: str, conf: Optional[float] = None, road: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Returns a high-level summary of emergency vehicle presence for a given road image.
+        Returns a high-level summary of emergency, police, and vehicle detections for a road image.
 
         Args:
             image_path: Path to the image file.
@@ -183,39 +207,63 @@ class EmergencyDetector:
             road: Road name (e.g. North, East, South, West).
 
         Returns:
-            dict containing detection status, primary vehicle type, highest confidence,
-            bounding box, road direction, and raw detections list.
+            dict containing detection status, counts, primary emergency vehicle type,
+            highest confidence, bounding box, road direction, and raw detections list.
         """
         detections = self.detect(image_path, conf=conf)
-        ambulance_detected = any(d["class_id"] == 0 or d["class_name"] == "Ambulance" for d in detections)
-        fire_truck_detected = any(d["class_id"] == 1 or d["class_name"] == "Fire Truck" for d in detections)
 
-        if detections:
-            primary = detections[0]
-            return {
-                "detected": True,
-                "ambulance_detected": ambulance_detected,
-                "fire_truck_detected": fire_truck_detected,
-                "vehicle_type": primary["class_name"],
-                "class_id": primary["class_id"],
-                "confidence": primary["confidence"],
-                "box": primary["box"],
-                "road": road,
-                "detections": detections,
-                "model_available": self.model is not None,
-                "error": None,
-            }
+        ambulance_count = sum(1 for d in detections if d["class_name"] == "Ambulance")
+        fire_truck_count = sum(1 for d in detections if d["class_name"] in ("Fire Truck", "Fire_Truck"))
+        police_count = sum(1 for d in detections if d["class_name"] == "Police")
+        vehicle_count = sum(1 for d in detections if d["class_name"] == "Vehicle")
+
+        ambulance_detected = ambulance_count > 0
+        fire_truck_detected = fire_truck_count > 0
+        police_detected = police_count > 0
+
+        # Only qualifying emergency vehicles trigger visual_emergency_detected
+        visual_emergency_detected = ambulance_detected or fire_truck_detected or (police_detected and ALLOW_POLICE_EMERGENCY_PRIORITY)
+
+        # Identify primary emergency detection if any (highest confidence qualifying emergency vehicle)
+        emergency_dets = [d for d in detections if d.get("is_emergency", False)]
+
+        if emergency_dets:
+            primary_em = emergency_dets[0]
+            vehicle_type = primary_em["class_name"]
+            class_id = primary_em["class_id"]
+            confidence = primary_em["confidence"]
+            box = primary_em["box"]
+        elif detections:
+            primary_em = detections[0]
+            vehicle_type = primary_em["class_name"]
+            class_id = primary_em["class_id"]
+            confidence = primary_em["confidence"]
+            box = primary_em["box"]
         else:
-            return {
-                "detected": False,
-                "ambulance_detected": False,
-                "fire_truck_detected": False,
-                "vehicle_type": "None",
-                "class_id": None,
-                "confidence": None,
-                "box": None,
-                "road": road,
-                "detections": [],
-                "model_available": self.model is not None,
-                "error": EmergencyDetector._load_error if self.model is None else None,
-            }
+            vehicle_type = "None"
+            class_id = None
+            confidence = None
+            box = None
+
+        return {
+            "detected": visual_emergency_detected,
+            "visual_emergency_detected": visual_emergency_detected,
+            "ambulance_detected": ambulance_detected,
+            "fire_truck_detected": fire_truck_detected,
+            "police_detected": police_detected,
+            "ambulance_count": ambulance_count,
+            "fire_truck_count": fire_truck_count,
+            "police_count": police_count,
+            "vehicle_count": vehicle_count,
+            "total_detections": len(detections),
+            "vehicle_type": vehicle_type,
+            "emergency_vehicle_type": vehicle_type,
+            "class_id": class_id,
+            "confidence": confidence,
+            "emergency_confidence": confidence,
+            "box": box,
+            "road": road,
+            "detections": detections,
+            "model_available": self.model is not None,
+            "error": EmergencyDetector._load_error if self.model is None else None,
+        }

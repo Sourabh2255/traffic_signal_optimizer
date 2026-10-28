@@ -47,9 +47,13 @@ def get_blank_image_bytes():
     return io.BytesIO(buffer)
 
 def get_ambulance_image_bytes():
-    """Loads the real Ambulance.jpg image."""
-    img_path = "Ambulance.jpg"
-    if not os.path.exists(img_path):
+    """Loads a verified ambulance test image."""
+    verified_path = os.path.join("data", "emergency_yolo", "test", "images", "00000197_jpg.rf.92f8a45c68f5435b475e60563a371f8f.jpg")
+    if os.path.exists(verified_path):
+        img_path = verified_path
+    elif os.path.exists("Ambulance.jpg"):
+        img_path = "Ambulance.jpg"
+    else:
         img_path = os.path.join("c:", os.sep, "Users", "Saurabh", "Downloads", "Ambulance.jpg")
     with open(img_path, "rb") as f:
         return io.BytesIO(f.read())

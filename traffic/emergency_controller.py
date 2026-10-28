@@ -54,7 +54,8 @@ def evaluate_emergency_candidate(
         Structured evaluation dict with validation reasoning and decision status.
     """
     # 1. Evaluate visual detection
-    vehicle_present = vehicle_type in ("Ambulance", "Fire Truck")
+    from utils.config import ALLOW_POLICE_EMERGENCY_PRIORITY
+    vehicle_present = vehicle_type in ("Ambulance", "Fire Truck") or (vehicle_type == "Police" and ALLOW_POLICE_EMERGENCY_PRIORITY)
     vehicle_confirmed = False
     if vehicle_present:
         if vehicle_confidence is not None:
@@ -82,6 +83,17 @@ def evaluate_emergency_candidate(
             f"Emergency priority confirmed: {vehicle_type}{conf_str} detected with active siren{siren_type_str}{siren_conf_str}. "
             f"Safety transition granted."
         )
+    elif vehicle_type == "Police" and not ALLOW_POLICE_EMERGENCY_PRIORITY:
+        if siren_confirmed:
+            reason = (
+                f"Police vehicle detected with acoustic siren, but police vehicles do not qualify for emergency preemption "
+                f"under traffic control policy (Ambulance and Fire Truck only). Normal adaptive signal timing maintained."
+            )
+        else:
+            reason = (
+                f"Police vehicle detected, but police vehicles do not qualify for emergency preemption "
+                f"under traffic control policy. Normal adaptive signal timing maintained."
+            )
     elif vehicle_confirmed and not siren_confirmed:
         reason = (
             f"Emergency vehicle detected, but siren confirmation is missing. "
@@ -211,8 +223,10 @@ def resolve_emergency_priority(
         v_type = r_info.get("vehicle_type") or r_info.get("emergency_vehicle_type") or "None"
         v_conf = r_info.get("confidence") if r_info.get("confidence") is not None else r_info.get("emergency_confidence")
 
-        # Recognize strictly emergency vehicle classes (Ambulance, Fire Truck)
-        if has_vehicle and v_type in ("Ambulance", "Fire Truck"):
+        # Recognize strictly emergency vehicle classes (Ambulance, Fire Truck; Police only if explicitly permitted)
+        from utils.config import ALLOW_POLICE_EMERGENCY_PRIORITY
+        qualifying_types = ("Ambulance", "Fire Truck") if not ALLOW_POLICE_EMERGENCY_PRIORITY else ("Ambulance", "Fire Truck", "Police")
+        if has_vehicle and v_type in qualifying_types:
             vehicle_entry = {
                 "road": road,
                 "vehicle_type": v_type,

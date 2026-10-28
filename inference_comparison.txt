@@ -1,0 +1,97 @@
+==========================================================================================
+YOLO INFERENCE CONFIGURATION COMPARISON REPORT (REPRESENTATIVE SUBSET: 60 IMAGES)
+==========================================================================================
+Model: best_emergency_vehicle.pt (read-only, no retraining)
+Subset Size: 60 images (22 fire trucks, 28 ambulances, 10 backgrounds)
+Tested Configurations: 6 (imgsz in [640, 960], conf in [0.10, 0.15, 0.25])
+
+DUPLICATE ANNOTATION WARNING INSPECTION:
+------------------------------------------------------------------------------------------
+Total files in valid/labels with duplicate bounding boxes: 22
+Sample affected files:
+  - 000036_jpg.rf.136a22da211bcf8e32d33d7c88f8e829.txt: 2 total annotations, 1 exact duplicate(s)
+  - 0_0_0_http___cdni-autocarindia-com_Features_DSC_6013_jpg.rf.2935c3e7848c56c5d075ee309580ddbd.txt: 5 total annotations, 1 exact duplicate(s)
+  - 106Ambulance_jpg.rf.bfbdbf363fc9ddb8d22e7da327211e6c.txt: 2 total annotations, 1 exact duplicate(s)
+  - 110Ambulance_jpg.rf.21f8c9f77002274f79bc59ae0790ebe4.txt: 4 total annotations, 1 exact duplicate(s)
+  - 14Ambulance_jpg.rf.6cf4397ee92f0af6ea604a8a95debf52.txt: 2 total annotations, 1 exact duplicate(s)
+  - 2Ambulance_jpg.rf.d0da80c4a67f473c28b77452aaaa2554.txt: 3 total annotations, 1 exact duplicate(s)
+  - 31Ambulance_jpg.rf.5664a2533c6ea69a05e439fdcd9bb040.txt: 2 total annotations, 1 exact duplicate(s)
+  - 35Ambulance_jpg.rf.25b4e38e7ef9c2764849bac62a2b31b3.txt: 2 total annotations, 1 exact duplicate(s)
+Root Cause: Bounding boxes with identical class ID and coordinates exist in Roboflow export.
+Resolution: Ultralytics validator automatically dedupes identical boxes during validation scanning;
+dataset files are left intact per project instructions.
+
+OVERALL INFERENCE COMPARISON TABLE:
+------------------------------------------------------------------------------------------
+Configuration               imgsz   conf    ms/img    Precision   Recall    mAP50     mAP50-95  
+------------------------------------------------------------------------------------------
+Baseline (640, conf=0.10)   640     0.10    520.6     0.5012      0.3535    0.3903    0.2102    
+Config 2 (640, conf=0.15)   640     0.15    448.8     0.5012      0.3535    0.4116    0.2225    
+Config 3 (640, conf=0.25)   640     0.25    443.3     0.5012      0.3535    0.4368    0.2316    
+Config 4 (960, conf=0.10)   960     0.10    716.1     0.2798      0.1889    0.1301    0.0497    
+Config 5 (960, conf=0.15)   960     0.15    1108.6    0.2798      0.1889    0.1341    0.0509    
+Config 6 (960, conf=0.25)   960     0.25    869.0     0.2798      0.1889    0.1611    0.0658    
+------------------------------------------------------------------------------------------
+
+PER-CLASS BREAKDOWN (AMBULANCE vs FIRE TRUCK):
+------------------------------------------------------------------------------------------
+Configuration               Class       Precision   Recall    mAP50     mAP50-95  
+------------------------------------------------------------------------------------------
+Baseline (640, conf=0.10)   ambulance   0.4926      0.4848    0.5395    0.3389    
+                            fire_truck  0.5098      0.2222    0.2410    0.0816    
+------------------------------------------------------------------------------------------
+Config 2 (640, conf=0.15)   ambulance   0.4926      0.4848    0.5515    0.3491    
+                            fire_truck  0.5098      0.2222    0.2717    0.0958    
+------------------------------------------------------------------------------------------
+Config 3 (640, conf=0.25)   ambulance   0.4926      0.4848    0.5605    0.3581    
+                            fire_truck  0.5098      0.2222    0.3131    0.1052    
+------------------------------------------------------------------------------------------
+Config 4 (960, conf=0.10)   ambulance   0.3238      0.3333    0.2244    0.0850    
+                            fire_truck  0.2358      0.0444    0.0358    0.0144    
+------------------------------------------------------------------------------------------
+Config 5 (960, conf=0.15)   ambulance   0.3238      0.3333    0.2205    0.0820    
+                            fire_truck  0.2358      0.0444    0.0476    0.0198    
+------------------------------------------------------------------------------------------
+Config 6 (960, conf=0.25)   ambulance   0.3238      0.3333    0.2315    0.0923    
+                            fire_truck  0.2358      0.0444    0.0907    0.0393    
+------------------------------------------------------------------------------------------
+
+COMPARATIVE ANALYSIS & RUNTIME ESTIMATION FOR FULL VALIDATION SET (1,490 IMAGES):
+------------------------------------------------------------------------------------------
+[Baseline (640, conf=0.10)]
+  - Latency: 520.6 ms/image | Est. Full Val (1,490 imgs) Runtime: ~12.9 minutes (776s)
+  - Precision vs Baseline: +0.0000 (50.12% vs 50.12%)
+  - Recall vs Baseline:    +0.0000 (35.35% vs 35.35%)
+  - mAP50 vs Baseline:     +0.0000 (39.03% vs 39.03%)
+
+[Config 2 (640, conf=0.15)]
+  - Latency: 448.8 ms/image | Est. Full Val (1,490 imgs) Runtime: ~11.1 minutes (669s)
+  - Precision vs Baseline: +0.0000 (50.12% vs 50.12%)
+  - Recall vs Baseline:    +0.0000 (35.35% vs 35.35%)
+  - mAP50 vs Baseline:     +0.0213 (41.16% vs 39.03%)
+
+[Config 3 (640, conf=0.25)]
+  - Latency: 443.3 ms/image | Est. Full Val (1,490 imgs) Runtime: ~11.0 minutes (660s)
+  - Precision vs Baseline: +0.0000 (50.12% vs 50.12%)
+  - Recall vs Baseline:    +0.0000 (35.35% vs 35.35%)
+  - mAP50 vs Baseline:     +0.0465 (43.68% vs 39.03%)
+
+[Config 4 (960, conf=0.10)]
+  - Latency: 716.1 ms/image | Est. Full Val (1,490 imgs) Runtime: ~17.8 minutes (1067s)
+  - Precision vs Baseline: -0.2214 (27.98% vs 50.12%)
+  - Recall vs Baseline:    -0.1646 (18.89% vs 35.35%)
+  - mAP50 vs Baseline:     -0.2602 (13.01% vs 39.03%)
+
+[Config 5 (960, conf=0.15)]
+  - Latency: 1108.6 ms/image | Est. Full Val (1,490 imgs) Runtime: ~27.5 minutes (1652s)
+  - Precision vs Baseline: -0.2214 (27.98% vs 50.12%)
+  - Recall vs Baseline:    -0.1646 (18.89% vs 35.35%)
+  - mAP50 vs Baseline:     -0.2562 (13.41% vs 39.03%)
+
+[Config 6 (960, conf=0.25)]
+  - Latency: 869.0 ms/image | Est. Full Val (1,490 imgs) Runtime: ~21.6 minutes (1295s)
+  - Precision vs Baseline: -0.2214 (27.98% vs 50.12%)
+  - Recall vs Baseline:    -0.1646 (18.89% vs 35.35%)
+  - mAP50 vs Baseline:     -0.2292 (16.11% vs 39.03%)
+
+==========================================================================================
